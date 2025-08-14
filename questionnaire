@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Votre entreprise est-elle éligible au Tarif Jaune d'EDF ?</title>
+  <meta name="description" content="Outil d'éligibilité au Tarif Jaune d'EDF : vérifiez en quelques secondes si votre site peut bénéficier du TRV Jaune (BT 37–250 kVA)." />
+  <style>
+    :root {
+      --tj-bg: #f6f8fb;
+      --tj-card: #ffffff;
+      --tj-primary: #5953FF; /* couleur de sélection souhaitée */
+      --tj-primary-weak: rgba(89,83,255,0.12);
+      --tj-text: #0f172a;
+      --tj-muted: #64748b;
+      --tj-border: #e2e8f0;
+      --tj-danger: #b91c1c;
+      --tj-success: #166534;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji"; margin: 0; color: var(--tj-text); background: var(--tj-bg); }
+    .tj-wrap { max-width: 960px; margin: 32px auto; padding: 0 16px; }
+    h1 { font-size: 1.8rem; margin: 0 0 8px; }
+    p.lead { margin: 0 0 24px; color: var(--tj-muted); }
+    .tj-card { background: var(--tj-card); border: 1px solid var(--tj-border); border-radius: var(--radius); box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+    .tj-card .tj-body { padding: 20px; }
+    .tj-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 720px){ .tj-grid { grid-template-columns: 1fr; } }
+
+    .tj-field { display: grid; gap: 8px; }
+    .tj-label { font-weight: 600; }
+    .tj-help { color: var(--tj-muted); font-size: .925rem; }
+
+    .tj-seg { display: grid; grid-auto-flow: column; gap: 8px; align-items: stretch; }
+    .tj-seg > label {
+      display: inline-grid; place-items: center; padding: 12px 14px;
+      text-align: center; border: 1px solid var(--tj-border); border-radius: 12px;
+      background: #fff; cursor: pointer; user-select: none; min-height: 46px;
+      transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+    }
+    .tj-seg > input[type="radio"], .tj-seg > input[type="checkbox"] { display: none; }
+    .tj-seg > input:checked + label { border-color: var(--tj-primary); background: var(--tj-primary-weak); color: var(--tj-text); box-shadow: inset 0 0 0 2px var(--tj-primary); }
+    .tj-seg > label:hover { border-color: var(--tj-primary); }
+    .tj-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+    .tj-btn { appearance: none; border: 1px solid var(--tj-primary); background: var(--tj-primary); color: #fff; border-radius: 999px; padding: 12px 18px; font-weight: 600; cursor: pointer; }
+    .tj-btn[disabled] { opacity: .5; cursor: not-allowed; }
+    .tj-btn.alt { background: transparent; color: var(--tj-primary); }
+
+    .tj-divider { height: 1px; background: var(--tj-border); margin: 20px 0; }
+
+    .tj-result { margin-top: 18px; }
+    .tj-badge { display: inline-block; padding: 4px 8px; border-radius: 999px; font-size: .85rem; font-weight: 700; }
+    .ok { color: var(--tj-success); background: #ecfdf5; border: 1px solid #bbf7d0; }
+    .ko { color: var(--tj-danger); background: #fef2f2; border: 1px solid #fecaca; }
+
+    .tj-list { margin: 10px 0; padding-left: 18px; }
+
+    .sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+    /* Table comparaison CU/LU */
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid var(--tj-border); padding: 10px; text-align: left; }
+    thead th { background: #f8fafc; }
+
+    .tj-footnote { color: var(--tj-muted); font-size: .9rem; }
+
+    /* CTA papernest (inséré après résultat) */
+    .cta-papernest {
+      margin-top: 16px; padding: 16px; background: var(--tj-primary-weak);
+      border: 1px solid var(--tj-border); border-radius: var(--radius); text-align: center;
+    }
+    .cta-papernest a {
+      display: inline-block; margin-top: 10px; padding: 10px 16px;
+      background: var(--tj-primary); color: #fff; font-weight: 700; border-radius: 10px; text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <main class="tj-wrap" aria-labelledby="titre-outil">
+    <h1 id="titre-outil">Votre entreprise est-elle éligible au Tarif Jaune d'EDF ?</h1>
+    <p class="lead">Vérifiez votre éligibilité au <strong>Tarif Jaune (BT &gt; 36 à 250 kVA)</strong> en moins de 15 secondes. Aucune donnée nominative collectée.</p>
+
+    <section class="tj-card" aria-labelledby="form-elig">
+      <div class="tj-body">
+        <h2 id="form-elig" class="sr-only">Formulaire d'évaluation</h2>
+
+        <form id="eligForm" novalidate>
+          <div class="tj-grid">
+
+            <!-- TYPE CLIENT -->
+            <div class="tj-field">
+              <label class="tj-label" for="typeClient">Type de client</label>
+              <div class="tj-seg" role="radiogroup" aria-label="Type de client">
+                <input type="radio" name="typeClient" id="tc-entreprise" value="entreprise" required>
+                <label for="tc-entreprise">Entreprise / asso / collectivité</label>
+                <input type="radio" name="typeClient" id="tc-copro" value="copro">
+                <label for="tc-copro">Syndicat de copropriété / propriétaire unique</label>
+              </div>
+              <p class="tj-help">Les copropriétés/propriétaires uniques n'ont pas de conditions d'effectif/CA.</p>
+            </div>
+
+            <!-- EMPLOYES (entreprise seulement) -->
+            <div class="tj-field" id="blocEmployes">
+              <span class="tj-label">Nombre d'employés</span>
+              <div class="tj-seg" role="radiogroup" aria-label="Nombre d'employés">
+                <input type="radio" name="employes" id="emp-0-10" value="0-10">
+                <label for="emp-0-10">0–10</label>
+                <input type="radio" name="employes" id="emp-11p" value="11+">
+                <label for="emp-11p">11 et +</label>
+              </div>
+            </div>
+
+            <!-- CA (entreprise seulement) -->
+            <div class="tj-field" id="blocCA">
+              <span class="tj-label">CA / Recettes / Total de bilan annuels</span>
+              <div class="tj-seg" role="radiogroup" aria-label="Chiffre d'affaires">
+                <input type="radio" name="ca" id="ca-2m-" value="<=2m">
+                <label for="ca-2m-">≤ 2 000 000 €</label>
+                <input type="radio" name="ca" id="ca-2m+" value=">2m">
+                <label for="ca-2m+">&gt; 2 000 000 €</label>
+              </div>
+            </div>
+
+            <!-- PUISSANCE -->
+            <div class="tj-field">
+              <span class="tj-label">Puissance maximale souscrite</span>
+              <div class="tj-seg" role="radiogroup" aria-label="Puissance maximale souscrite">
+                <input type="radio" name="pmax" id="p-36-" value="<=36">
+                <label for="p-36-">≤ 36 kVA</label>
+                <input type="radio" name="pmax" id="p-37-250" value="37-250">
+                <label for="p-37-250">37–250 kVA</label>
+                <input type="radio" name="pmax" id="p-250+" value=">250">
+                <label for="p-250+">&gt; 250 kVA</label>
+              </div>
+              <p class="tj-help">Visible sur votre contrat / facture. Si inconnu, demandez à votre électricien ou gestionnaire de réseau.</p>
+            </div>
+
+            <!-- RACCORDEMENT -->
+            <div class="tj-field">
+              <span class="tj-label">Type de raccordement</span>
+              <div class="tj-seg" role="radiogroup" aria-label="Type de raccordement">
+                <input type="radio" name="raccord" id="r-bt" value="bt">
+                <label for="r-bt">Basse tension (BT)</label>
+                <input type="radio" name="raccord" id="r-hta" value="hta">
+                <label for="r-hta">Haute tension A (HTA)</label>
+              </div>
+            </div>
+
+            <!-- LOCALISATION -->
+            <div class="tj-field">
+              <span class="tj-label">Localisation du site</span>
+              <div class="tj-seg" role="radiogroup" aria-label="Localisation du site">
+                <input type="radio" name="geo" id="g-fr" value="france">
+                <label for="g-fr">France métropolitaine continentale</label>
+                <input type="radio" name="geo" id="g-autre" value="autre">
+                <label for="g-autre">Autre</label>
+              </div>
+            </div>
+
+            <!-- CONTRAT RÉSEAU (info) -->
+            <div class="tj-field">
+              <span class="tj-label">Type de contrat (info)</span>
+              <div class="tj-seg" role="radiogroup" aria-label="Type de contrat">
+                <input type="radio" name="contrat" id="c-unique" value="unique" checked>
+                <label for="c-unique">Contrat unique</label>
+                <input type="radio" name="contrat" id="c-card" value="card">
+                <label for="c-card">Contrat CARD/CART</label>
+              </div>
+              <p class="tj-help">N'influe pas sur l'éligibilité, sert au conseil (facturation & responsabilités).</p>
+            </div>
+
+            <!-- CONSEIL CU/LU (optionnel pour recommandations) -->
+            <div class="tj-field">
+              <span class="tj-label">À puissance max, vous consommez…</span>
+              <div class="tj-seg" role="radiogroup" aria-label="Heures à puissance max">
+                <input type="radio" name="hpmax" id="h-<2000" value="<2000">
+                <label for="h-<2000">Moins de 2 000 h/an</label>
+                <input type="radio" name="hpmax" id="h->=2000" value=">=2000">
+                <label for="h->=2000">2 000 h/an ou plus</label>
+                <input type="radio" name="hpmax" id="h-ns" value="ns" checked>
+                <label for="h-ns">Je ne sais pas</label>
+              </div>
+              <p class="tj-help">Indicateur pour orienter entre Courte Utilisation (CU) et Longue Utilisation (LU).</p>
+            </div>
+
+          </div>
+
+          <div class="tj-actions">
+            <button type="submit" class="tj-btn" id="submitBtn">Vérifier l'éligibilité</button>
+            <button type="button" class="tj-btn alt" id="resetBtn" aria-label="Réinitialiser le formulaire">Réinitialiser</button>
+            <button type="button" class="tj-btn alt" id="printBtn" aria-label="Imprimer le résultat">Imprimer le résultat</button>
+          </div>
+        </form>
+
+        <div class="tj-divider" role="presentation"></div>
+
+        <section class="tj-result" aria-live="polite" aria-atomic="true">
+          <h3 class="sr-only">Résultat</h3>
+          <div id="resultCard"></div>
+        </section>
+
+      </div>
+    </section>
+
+    <p class="tj-footnote">Règles 2025 : article L.337-7 du Code de l’énergie et loi n° 2024-330 du 11 avril 2024 — Eligibilité TTJ : BT, 37–250 kVA, France métropolitaine continentale, et (≤10 salariés &amp; CA/recettes/bilan ≤ 2 M€) ou copropriété/propriétaire unique d’un immeuble d’habitation.</p>
+
+  </main>
+
+  <script>
+    (function(){
+      const $ = (s,root=document) => root.querySelector(s);
+
+      const PHONE_TEL = 'tel:+33123456789'; // TODO: remplacez par le numéro final
+
+      const form = $('#eligForm');
+      const resultCard = $('#resultCard');
+      const resetBtn = $('#resetBtn');
+      const printBtn = $('#printBtn');
+      const blocEmployes = $('#blocEmployes');
+      const blocCA = $('#blocCA');
+
+      // Affichage conditionnel entreprise vs copro
+      form.addEventListener('change', ()=>{
+        const typeClient = form.typeClient.value;
+        const showCorp = typeClient === 'entreprise';
+        blocEmployes.style.display = showCorp ? 'block' : 'none';
+        blocCA.style.display    = showCorp ? 'block' : 'none';
+      });
+
+      // Helpers lecture valeurs
+      function val(name){
+        const el = form.elements[name];
+        if(!el) return null;
+        if(el instanceof RadioNodeList) return el.value || null;
+        return el.value || null;
+      }
+
+      function ctaHTML(){
+        return `
+          <div class="cta-papernest" id="ctaPapernest">
+            <p><strong>Envie de comparer les offres d'énergie pour votre entreprise ?</strong><br/>Trouvez l'offre idéale en cinq minutes avec papernest&nbsp;!</p>
+            <a href="${PHONE_TEL}" aria-label="Appeler papernest">📞 Appeler maintenant</a>
+          </div>`;
+      }
+
+      // >>> suppression de l'affichage "Que faire ensuite" dans le rendu
+      function buildResult(status, title, reasons, suggestions, code, cuLuAdvice){
+        const badge = status==='ok' ? '<span class="tj-badge ok">Éligible</span>' : '<span class="tj-badge ko">Non éligible</span>';
+        const reasonsHtml = reasons && reasons.length ? `<ul class="tj-list">${reasons.map(r=>`<li>${r}</li>`).join('')}</ul>` : '';
+        // const sugHtml = ...  // supprimé
+        const cuLuHtml = cuLuAdvice ? `<div class="tj-divider"></div><p><strong>Conseil CU vs LU :</strong> ${cuLuAdvice}</p>` : '';
+
+        // Résultat + CTA (CTA affiché uniquement après le calcul)
+        resultCard.innerHTML = `
+          <div class="tj-card" data-code="${code}">
+            <div class="tj-body">
+              <p>${badge}</p>
+              <h4 style="margin-top:6px;">${title}</h4>
+              ${reasonsHtml}
+              ${cuLuHtml}
+            </div>
+          </div>
+          ${ctaHTML()}
+        `;
+      }
+
+      function adviseCULU(){
+        const hp = val('hpmax');
+        if(hp === '<2000') return 'Votre usage semble intermittent (&lt; 2 000 h/an à puissance max) : la version <em>Courte Utilisation (CU)</em> est généralement plus adaptée (abonnement plus bas, kWh plus élevé).';
+        if(hp === '>=2000') return 'Votre usage semble étalé (≥ 2 000 h/an à puissance max) : la version <em>Longue Utilisation (LU)</em> est souvent plus avantageuse (abonnement plus haut, kWh plus bas).';
+        return 'Si vous utilisez votre puissance ≲ 2 000 h/an, privilégiez la <em>CU</em>. Au-delà, privilégiez la <em>LU</em>.';
+      }
+
+      form.addEventListener('submit', (e)=>{
+        e.preventDefault();
+
+        const typeClient = val('typeClient');
+        const employes   = val('employes');
+        const ca         = val('ca');
+        const pmax       = val('pmax');
+        const raccord    = val('raccord');
+        const geo        = val('geo');
+
+        // Validation minimale
+        const required = ['typeClient','pmax','raccord','geo'];
+        const missing = required.filter(n => !val(n));
+        if(typeClient === 'entreprise'){
+          if(!val('employes')) missing.push('employes');
+          if(!val('ca'))       missing.push('ca');
+        }
+        if(missing.length){
+          buildResult('ko', 'Veuillez compléter les champs requis avant de lancer l’évaluation.', missing.map(m=>`Champ manquant : <code>${m}</code>`), [], 'ERR_MISSING');
+          return;
+        }
+
+        // Règles d’éligibilité 2025
+        const isBT     = raccord === 'bt';
+        const inRange  = pmax === '37-250';
+        const inFrance = geo === 'france';
+
+        let reasons = [];
+        let code    = '';
+
+        if(!isBT){
+          code = 'NO_TJ_WIRING';
+          reasons.push('Votre installation n’est pas en <strong>basse tension (BT)</strong>. Le Tarif Jaune ne s’applique qu’en BT.');
+        }
+        if(!inRange){
+          if(pmax === '<=36'){ code = 'NO_TJ_BLUE';  reasons.push('Votre puissance maximale est ≤ 36 kVA : vous relevez du <strong>Tarif Bleu</strong>.'); }
+          if(pmax === '>250'){ code = 'NO_TJ_GREEN'; reasons.push('Votre puissance maximale est &gt; 250 kVA : vous relevez du <strong>Tarif Vert</strong>.'); }
+        }
+        if(!inFrance){
+          code = 'NO_TJ_GEO';
+          reasons.push('Le site n’est pas situé en <strong>France métropolitaine continentale</strong>.');
+        }
+
+        // Conditions sociales/financières (entreprise)
+        let socialOk = true;
+        if(typeClient === 'entreprise'){
+          socialOk = (employes === '0-10') && (ca === '<=2m');
+          if(employes !== '0-10') { code = 'NO_TJ_MARKET'; reasons.push('Votre structure compte <strong>11 salariés ou plus</strong> : non éligible au TRV Jaune.'); }
+          if(ca !== '<=2m')       { code = 'NO_TJ_MARKET'; reasons.push('Votre <strong>CA/recettes/total bilan &gt; 2 M€</strong> : non éligible au TRV Jaune.'); }
+        }
+
+        const scopeOk = isBT && inRange && inFrance;
+        const actorOk = (typeClient === 'copro') || (typeClient === 'entreprise' && socialOk);
+        const eligible = scopeOk && actorOk;
+
+        const suggestions = [];
+        let title = '';
+        let cuLu = adviseCULU();
+
+        if(eligible){
+          title = 'Bonne nouvelle : votre site est éligible au Tarif Jaune d’EDF (TRV BT 37–250 kVA).';
+          reasons = [
+            'Critères techniques remplis : <strong>BT</strong>, <strong>37–250 kVA</strong>, <strong>France métropolitaine</strong>.',
+            (typeClient==='copro' ? 'Profil copropriété/propriétaire unique : pas de conditions d’effectif/CA.' : 'Profil entreprise : ≤ 10 salariés et CA/recettes/bilan ≤ 2 M€.' )
+          ];
+          // suggestions (non affichées) conservées si besoin futur
+          suggestions.push('Préparez l’<strong>attestation d’éligibilité électronique</strong> pour la souscription.');
+          suggestions.push('Vérifiez la <strong>puissance optimale</strong> pour éviter les dépassements coûteux.');
+          suggestions.push('Choisissez entre <strong>Courte Utilisation</strong> et <strong>Longue Utilisation</strong> selon votre profil d’usage.');
+          buildResult('ok', title, reasons, suggestions, 'OK_TJ', cuLu);
+          return;
+        }
+
+        // Non éligible : proposer la meilleure orientation (non affichée)
+        if(pmax === '<=36'){
+          suggestions.push('Consultez le <strong>Tarif Bleu</strong> (BT ≤ 36 kVA).');
+        } else if(pmax === '>250'){
+          suggestions.push('Consultez le <strong>Tarif Vert</strong> (HTA &gt; 250 kVA).');
+        }
+        if(typeClient === 'entreprise' && (!socialOk)){
+          suggestions.push('Comparez les <strong>offres de marché</strong> pour un profil de consommation type <strong>C4</strong>.');
+        }
+        if(!isBT)     suggestions.push('Confirmez votre schéma de raccordement auprès de votre installateur ou du GRD.');
+        if(!inFrance) suggestions.push('Vérifiez les offres disponibles dans votre zone géographique.');
+
+        title = 'Votre site n’est pas éligible au Tarif Jaune d’EDF.';
+        if(!reasons.length){ reasons.push('Un ou plusieurs critères d’éligibilité ne sont pas respectés.'); }
+        buildResult('ko', title, reasons, suggestions, code, null);
+      });
+
+      resetBtn.addEventListener('click', ()=>{
+        form.reset();
+        resultCard.innerHTML = '';
+        // Affichage par défaut blocs entreprise jusqu’à nouveau choix
+        blocEmployes.style.display = 'block';
+        blocCA.style.display = 'block';
+      });
+
+      printBtn.addEventListener('click', ()=> window.print());
+
+      // État initial : montrer employés/CA tant que le type client n’est pas choisi
+      blocEmployes.style.display = 'block';
+      blocCA.style.display = 'block';
+    })();
+  </script>
+
+  <!-- Données structurées FAQ/HowTo (SEO) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Qui est éligible au Tarif Jaune d’EDF ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Les sites en basse tension (BT) avec une puissance maximale souscrite strictement >36 kVA et ≤250 kVA, situés en France métropolitaine continentale. Pour les entreprises/associations/collectivités, il faut également ≤10 salariés et un CA/recettes/total de bilan ≤2 M€. Les syndicats de copropriété ou propriétaires uniques d’un immeuble d’habitation sont éligibles sans condition d’effectif/CA."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Que faire si je ne suis pas éligible au Tarif Jaune ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Selon les cas : puissance ≤36 kVA → Tarif Bleu ; puissance >250 kVA ou HTA → Tarif Vert ; critères sociaux/financiers non remplis → offres de marché pour un profil de consommation C4."
+        }
+      }
+    ]
+  }
+  </script>
+</body>
+</html>
+
